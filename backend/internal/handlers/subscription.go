@@ -3,7 +3,9 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"yokavpn-web-backend/internal/database"
@@ -57,33 +59,44 @@ func CreateSubscription(c *gin.Context) {
 	}
 
 	// 2. Create Subscription for that user
-	remnaSub, err := client.CreateSubscription(remnaUser.ID)
+	remnaSub, err := client.CreateSubscription(remnaUser.ShortUuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create subscription in Remnawave: " + err.Error()})
 		return
 	}
 
 	// 3. Save to local DB
+	var systemUser models.User
+	if err := database.DB.Where("email = ?", "system@yokavpn.local").First(&systemUser).Error; err != nil {
+		systemUser = models.User{
+			Email:    "system@yokavpn.local",
+			Password: "system-generated",
+		}
+		database.DB.Create(&systemUser)
+	}
+
 	authKey := generateAuthKey()
-	
-	expiresAt, _ := time.Parse(time.RFC3339, remnaSub.ExpiresAt)
-	if remnaSub.ExpiresAt == "" {
+	expiresAt, _ := time.Parse(time.RFC3339, remnaSub.User.ExpiresAt)
+	if remnaSub.User.ExpiresAt == "" {
 		expiresAt = time.Now().AddDate(0, 1, 0)
 	}
 
-	sub := models.Subscription{
+	trafficTotal, _ := strconv.ParseInt(remnaSub.User.TrafficLimitBytes, 10, 64)
+	trafficUsed, _ := strconv.ParseInt(remnaSub.User.TrafficUsedBytes, 10, 64)
+
+	newSub := models.Subscription{
 		UserID:       user.ID,
 		RemnaUserID:  remnaUser.ShortUuid,
 		RemnaSubLink: remnaSub.SubscriptionUrl,
 		ShortID:      remnaSub.User.ShortUuid,
 		AuthKey:      authKey,
-		TrafficTotal: remnaSub.User.TrafficLimitBytes,
-		TrafficUsed:  remnaSub.User.TrafficUsedBytes,
+		TrafficTotal: trafficTotal,
+		TrafficUsed:  trafficUsed,
 		ExpiresAt:    expiresAt,
 		Status:       "active",
 	}
 
-	if err := database.DB.Create(&sub).Error; err != nil {
+	if err := database.DB.Create(&newSub).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save subscription locally"})
 		return
 	}
@@ -91,8 +104,8 @@ func CreateSubscription(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message":           "Subscription created successfully",
 		"auth_key":          authKey,
-		"short_id":          sub.ShortID,
-		"subscription_link": sub.RemnaSubLink,
+		"short_id":          newSub.ShortID,
+		"subscription_link": newSub.RemnaSubLink,
 	})
 }
 
@@ -113,28 +126,42 @@ func GetSubscriptionByAuthKey(c *gin.Context) {
 	client := remnawave.NewClient()
 
 	if err != nil {
-		// Not in DB, try Remnawave
+		fmt.Printf("Subscription not found in DB for key %s, trying Remnawave...\n", key)
 		remnaSub, err := client.GetSubscriptionByShortID(key)
 		if err != nil {
+			fmt.Printf("Remnawave lookup failed for key %s: %v\n", key, err)
 			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found locally or in Remnawave"})
 			return
 		}
 
-		// Auto-import
+		fmt.Printf("Found in Remnawave, importing: %+v\n", remnaSub.User.ShortUuid)
+		
+		var systemUser models.User
+		if err := database.DB.Where("email = ?", "system@yokavpn.local").First(&systemUser).Error; err != nil {
+			systemUser = models.User{
+				Email:    "system@yokavpn.local",
+				Password: "system-generated",
+			}
+			database.DB.Create(&systemUser)
+		}
+
 		authKey := generateAuthKey()
 		expiresAt, _ := time.Parse(time.RFC3339, remnaSub.User.ExpiresAt)
 		if remnaSub.User.ExpiresAt == "" {
 			expiresAt = time.Now().AddDate(0, 1, 0)
 		}
 
+		trafficTotal, _ := strconv.ParseInt(remnaSub.User.TrafficLimitBytes, 10, 64)
+		trafficUsed, _ := strconv.ParseInt(remnaSub.User.TrafficUsedBytes, 10, 64)
+
 		sub = models.Subscription{
-			UserID:       1, // System user
+			UserID:       systemUser.ID,
 			RemnaUserID:  remnaSub.User.ShortUuid,
 			RemnaSubLink: remnaSub.SubscriptionUrl,
 			ShortID:      remnaSub.User.ShortUuid,
 			AuthKey:      authKey,
-			TrafficTotal: remnaSub.User.TrafficLimitBytes,
-			TrafficUsed:  remnaSub.User.TrafficUsedBytes,
+			TrafficTotal: trafficTotal,
+			TrafficUsed:  trafficUsed,
 			ExpiresAt:    expiresAt,
 			Status:       "active",
 		}
@@ -143,16 +170,19 @@ func GetSubscriptionByAuthKey(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to auto-import subscription"})
 			return
 		}
-		} else {
+	} else {
 		// Found locally, sync
 		remnaSub, err := client.GetSubscriptionByShortID(sub.ShortID)
 		if err == nil {
+			trafficTotal, _ := strconv.ParseInt(remnaSub.User.TrafficLimitBytes, 10, 64)
+			trafficUsed, _ := strconv.ParseInt(remnaSub.User.TrafficUsedBytes, 10, 64)
+			
 			sub.RemnaSubLink = remnaSub.SubscriptionUrl
-			sub.TrafficTotal = remnaSub.User.TrafficLimitBytes
-			sub.TrafficUsed = remnaSub.User.TrafficUsedBytes
+			sub.TrafficTotal = trafficTotal
+			sub.TrafficUsed = trafficUsed
 			database.DB.Save(&sub)
 		}
-		}
+	}
 
 	c.JSON(http.StatusOK, sub)
 }

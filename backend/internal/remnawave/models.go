@@ -6,8 +6,8 @@ type RemnaUser struct {
 	ExpiresAt           string `json:"expiresAt"`
 	IsActive            bool   `json:"isActive"`
 	UserStatus          string `json:"userStatus"`
-	TrafficUsedBytes    int64  `json:"trafficUsedBytes"`
-	TrafficLimitBytes   int64  `json:"trafficLimitBytes"`
+	TrafficUsedBytes    string `json:"trafficUsedBytes"`
+	TrafficLimitBytes   string `json:"trafficLimitBytes"`
 }
 
 type RemnaSubscription struct {
