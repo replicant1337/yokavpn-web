@@ -22,7 +22,7 @@ func NewClient() *Client {
 
 func (c *Client) CreateUser(username, email string) (*RemnaUser, error) {
 	reqBody, _ := json.Marshal(CreateUserRequest{Username: username, Email: email})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/users", c.BaseURL), bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/users", c.BaseURL), bytes.NewBuffer(reqBody))
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -45,7 +45,7 @@ func (c *Client) CreateUser(username, email string) (*RemnaUser, error) {
 
 func (c *Client) CreateSubscription(userID string) (*RemnaSubscription, error) {
 	reqBody, _ := json.Marshal(CreateSubscriptionRequest{UserID: userID})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/subscriptions", c.BaseURL), bytes.NewBuffer(reqBody))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/subscriptions", c.BaseURL), bytes.NewBuffer(reqBody))
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -67,7 +67,7 @@ func (c *Client) CreateSubscription(userID string) (*RemnaSubscription, error) {
 }
 
 func (c *Client) GetSubscriptionByShortID(shortID string) (*RemnaSubscription, error) {
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/subscriptions/%s", c.BaseURL, shortID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/subscriptions/%s", c.BaseURL, shortID), nil)
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
 	resp, err := http.DefaultClient.Do(req)

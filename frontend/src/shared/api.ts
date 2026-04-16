@@ -14,6 +14,8 @@ export interface Subscription {
   remna_sub_link: string;
   short_id: string;
   auth_key: string;
+  traffic_total: number;
+  traffic_used: number;
   expires_at: string;
   status: string;
 }

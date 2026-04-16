@@ -21,10 +21,12 @@ type Subscription struct {
 	UserID         uint           `gorm:"not null" json:"user_id"`
 	User           User           `json:"user"`
 	PlanName       string         `json:"plan_name"`
-	RemnaUserID    string         `json:"remna_user_id"` // User ID in Remnawave
-	RemnaSubLink   string         `json:"remna_sub_link"` // Subscription link from Remnawave
-	ShortID        string         `gorm:"uniqueIndex" json:"short_id"` // Mirror of Remnawave ShortID
-	AuthKey        string         `gorm:"uniqueIndex;not null" json:"auth_key"` // Unique key for auth
+	RemnaUserID    string         `json:"remna_user_id"`
+	RemnaSubLink   string         `json:"remna_sub_link"`
+	ShortID        string         `gorm:"uniqueIndex" json:"short_id"`
+	AuthKey        string         `gorm:"uniqueIndex;not null" json:"auth_key"`
+	TrafficTotal   int64          `json:"traffic_total"`
+	TrafficUsed    int64          `json:"traffic_used"`
 	ExpiresAt      time.Time      `json:"expires_at"`
 	Status         string         `gorm:"default:'active'" json:"status"`
 	CreatedAt      time.Time      `json:"created_at"`
