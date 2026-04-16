@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	// "yokavpn-web-backend/internal/database"
+	"yokavpn-web-backend/internal/database"
 	"yokavpn-web-backend/internal/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// Initialize Database
-	// database.InitDB() // Uncomment when DB is running
+	database.InitDB() 
 
 	r := gin.Default()
 
@@ -27,7 +27,8 @@ func main() {
 	{
 	        api.GET("/health", handlers.HealthCheck)
 	        api.POST("/subscriptions", handlers.CreateSubscription)
-	        api.GET("/subscriptions/:shortId", handlers.GetSubscription)
+	        api.GET("/subscriptions/:shortId", handlers.GetSubscriptionByAuthKey) // Renamed from GetSubscription
+	        api.GET("/subscriptions/auth/:authKey", handlers.GetSubscriptionByAuthKey)
 	}
 	port := os.Getenv("PORT")
 	if port == "" {

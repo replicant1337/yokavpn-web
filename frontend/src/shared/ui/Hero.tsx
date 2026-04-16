@@ -1,5 +1,6 @@
 import React from 'react';
-import styles from './Hero.module.css';
+import { useNavigate } from 'react-router-dom';
+import styles from '@/shared/ui/Hero.module.css';
 
 const Hero: React.FC = () => {
   return (

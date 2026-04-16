@@ -28,6 +28,25 @@
   color: #ffffff;
 }
 
+.logoLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.navBtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dimmed);
+  transition: var(--transition-fast);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  color: #ffffff;
+}
+
 .navLinks {
   display: none;
   align-items: center;
