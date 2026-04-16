@@ -4,8 +4,6 @@ import styles from './Hero.module.css';
 const Hero: React.FC = () => {
   return (
     <div className={styles.hero}>
-      <div className={styles.spotlight}></div>
-
       <div className={styles.content}>
         <h1 className={styles.title}>
           БЫСТРЫЙ И <br /> БЕЗОПАСНЫЙ VPN
