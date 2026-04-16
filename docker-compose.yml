@@ -12,6 +12,47 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yokavpn -d yokavpn_web"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: yokavpn-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=yokavpn
+      - DB_PASSWORD=password123
+      - DB_NAME=yokavpn_web
+      - REMNAWAVE_API_URL=${REMNAWAVE_API_URL}
+      - REMNAWAVE_API_TOKEN=${REMNAWAVE_API_TOKEN}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: yokavpn-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

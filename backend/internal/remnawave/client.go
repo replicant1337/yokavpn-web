@@ -36,11 +36,15 @@ func (c *Client) CreateUser(username, email string) (*RemnaUser, error) {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var response UserResponse
+	var response struct {
+		Response struct {
+			User RemnaUser `json:"user"`
+		} `json:"response"`
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	return &response.Data, nil
+	return &response.Response.User, nil
 }
 
 func (c *Client) CreateSubscription(userID string) (*RemnaSubscription, error) {
@@ -59,15 +63,19 @@ func (c *Client) CreateSubscription(userID string) (*RemnaSubscription, error) {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var response SubscriptionResponse
+	var response struct {
+		Response struct {
+			Subscription RemnaSubscription `json:"subscription"`
+		} `json:"response"`
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	return &response.Data, nil
+	return &response.Response.Subscription, nil
 }
 
 func (c *Client) GetSubscriptionByShortID(shortID string) (*RemnaSubscription, error) {
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/subscriptions/%s", c.BaseURL, shortID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/subscriptions", c.BaseURL), nil)
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -80,9 +88,16 @@ func (c *Client) GetSubscriptionByShortID(shortID string) (*RemnaSubscription, e
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var response SubscriptionResponse
+	var response SubscriptionsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	return &response.Data, nil
+
+	for _, sub := range response.Response.Subscriptions {
+		if sub.User.ShortUuid == shortID {
+			return &sub, nil
+		}
+	}
+
+	return nil, fmt.Errorf("subscription not found")
 }

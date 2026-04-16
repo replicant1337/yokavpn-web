@@ -1,31 +1,25 @@
 package remnawave
 
 type RemnaUser struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Status   string `json:"status"`
+	ShortUuid           string `json:"shortUuid"`
+	Username            string `json:"username"`
+	ExpiresAt           string `json:"expiresAt"`
+	IsActive            bool   `json:"isActive"`
+	UserStatus          string `json:"userStatus"`
+	TrafficUsedBytes    int64  `json:"trafficUsedBytes"`
+	TrafficLimitBytes   int64  `json:"trafficLimitBytes"`
 }
 
 type RemnaSubscription struct {
-	ID        string `json:"id"`
-	ShortID   string `json:"short_id"` // Добавляем ShortID
-	UserID    string `json:"user_id"`
-	SubLink   string `json:"subscription_url"`
-	ExpiresAt string `json:"expires_at"`
-	Traffic   struct {
-		Total    int64 `json:"total"`
-		Used     int64 `json:"used"`
-		Remaining int64 `json:"remaining"`
-	} `json:"traffic"`
+	User            RemnaUser `json:"user"`
+	Links           []string  `json:"links"`
+	SubscriptionUrl string    `json:"subscriptionUrl"`
 }
 
-type UserResponse struct {
-	Data RemnaUser `json:"data"`
-}
-
-type SubscriptionResponse struct {
-	Data RemnaSubscription `json:"data"`
+type SubscriptionsResponse struct {
+	Response struct {
+		Subscriptions []RemnaSubscription `json:"subscriptions"`
+	} `json:"response"`
 }
 
 type CreateUserRequest struct {

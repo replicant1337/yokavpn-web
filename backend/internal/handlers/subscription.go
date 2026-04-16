@@ -39,7 +39,7 @@ func CreateSubscription(c *gin.Context) {
 	if result.Error != nil {
 		user = models.User{
 			Email:    req.Email,
-			Password: "system-generated", // Should be handled better in reality
+			Password: "system-generated", 
 		}
 		if err := database.DB.Create(&user).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create local user"})
@@ -66,20 +66,19 @@ func CreateSubscription(c *gin.Context) {
 	// 3. Save to local DB
 	authKey := generateAuthKey()
 	
-	// Parse expiry date if needed
 	expiresAt, _ := time.Parse(time.RFC3339, remnaSub.ExpiresAt)
 	if remnaSub.ExpiresAt == "" {
-		expiresAt = time.Now().AddDate(0, 1, 0) // Default 1 month
+		expiresAt = time.Now().AddDate(0, 1, 0)
 	}
 
 	sub := models.Subscription{
 		UserID:       user.ID,
-		RemnaUserID:  remnaUser.ID,
-		RemnaSubLink: remnaSub.SubLink,
-		ShortID:      remnaSub.ShortID,
+		RemnaUserID:  remnaUser.ShortUuid,
+		RemnaSubLink: remnaSub.SubscriptionUrl,
+		ShortID:      remnaSub.User.ShortUuid,
 		AuthKey:      authKey,
-		TrafficTotal: remnaSub.Traffic.Total,
-		TrafficUsed:  remnaSub.Traffic.Used,
+		TrafficTotal: remnaSub.User.TrafficLimitBytes,
+		TrafficUsed:  remnaSub.User.TrafficUsedBytes,
 		ExpiresAt:    expiresAt,
 		Status:       "active",
 	}
@@ -111,38 +110,31 @@ func GetSubscriptionByAuthKey(c *gin.Context) {
 	var sub models.Subscription
 	err := database.DB.Where("auth_key = ? OR short_id = ?", key, key).First(&sub).Error
 	
+	client := remnawave.NewClient()
+
 	if err != nil {
-		// If not found in DB, try to fetch from Remnawave (assuming key is a shortId)
-		client := remnawave.NewClient()
+		// Not in DB, try Remnawave
 		remnaSub, err := client.GetSubscriptionByShortID(key)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found locally or in Remnawave"})
 			return
 		}
 
-		// Auto-import if found in Remnawave
-		// Note: We might not have a local user for this yet, so we create a shadow user
-		var user models.User
-		// Try to find user by remnaUserID if we had it, but we only have remnaUserID from subscription
-		// For simplicity, we'll create/find a dummy system user or handle it by remnaUserID
-		
-		// Let's create a subscription with a 0 UserID or a system user for now
-		// In a real app, you'd probably want to fetch the user info from Remnawave too
-		
+		// Auto-import
 		authKey := generateAuthKey()
-		expiresAt, _ := time.Parse(time.RFC3339, remnaSub.ExpiresAt)
-		if remnaSub.ExpiresAt == "" {
+		expiresAt, _ := time.Parse(time.RFC3339, remnaSub.User.ExpiresAt)
+		if remnaSub.User.ExpiresAt == "" {
 			expiresAt = time.Now().AddDate(0, 1, 0)
 		}
 
 		sub = models.Subscription{
-			UserID:       1, // System/Default user ID
-			RemnaUserID:  remnaSub.UserID,
-			RemnaSubLink: remnaSub.SubLink,
-			ShortID:      remnaSub.ShortID,
+			UserID:       1, // System user
+			RemnaUserID:  remnaSub.User.ShortUuid,
+			RemnaSubLink: remnaSub.SubscriptionUrl,
+			ShortID:      remnaSub.User.ShortUuid,
 			AuthKey:      authKey,
-			TrafficTotal: remnaSub.Traffic.Total,
-			TrafficUsed:  remnaSub.Traffic.Used,
+			TrafficTotal: remnaSub.User.TrafficLimitBytes,
+			TrafficUsed:  remnaSub.User.TrafficUsedBytes,
 			ExpiresAt:    expiresAt,
 			Status:       "active",
 		}
@@ -151,17 +143,16 @@ func GetSubscriptionByAuthKey(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to auto-import subscription"})
 			return
 		}
-	} else {
-		// If found locally, optionally sync with Remnawave
-		client := remnawave.NewClient()
+		} else {
+		// Found locally, sync
 		remnaSub, err := client.GetSubscriptionByShortID(sub.ShortID)
 		if err == nil {
-			sub.RemnaSubLink = remnaSub.SubLink
-			sub.TrafficTotal = remnaSub.Traffic.Total
-			sub.TrafficUsed = remnaSub.Traffic.Used
+			sub.RemnaSubLink = remnaSub.SubscriptionUrl
+			sub.TrafficTotal = remnaSub.User.TrafficLimitBytes
+			sub.TrafficUsed = remnaSub.User.TrafficUsedBytes
 			database.DB.Save(&sub)
 		}
-	}
+		}
 
 	c.JSON(http.StatusOK, sub)
 }

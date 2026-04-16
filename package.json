@@ -1,0 +1,14 @@
+{
+  "name": "yokavpn-web",
+  "version": "1.0.0",
+  "scripts": {
+    "docker:db": "docker-compose up -d db",
+    "install:all": "npm install && cd backend && go mod download && cd ../frontend && npm install",
+    "dev:backend": "cd backend && go run cmd/api/main.go",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "npm run docker:db && concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
