@@ -25,10 +25,10 @@ func main() {
 	// Routes
 	api := r.Group("/api")
 	{
-		api.GET("/health", handlers.HealthCheck)
-		api.POST("/subscriptions", handlers.CreateSubscription)
+	        api.GET("/health", handlers.HealthCheck)
+	        api.POST("/subscriptions", handlers.CreateSubscription)
+	        api.GET("/subscriptions/:shortId", handlers.GetSubscription)
 	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

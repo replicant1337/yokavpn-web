@@ -37,8 +37,26 @@ func CreateSubscription(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Subscription created successfully",
-		"remna_user_id": remnaUser.ID,
+		"message":           "Subscription created successfully",
+		"remna_user_id":     remnaUser.ID,
 		"subscription_link": sub.SubLink,
+		"short_id":          sub.ShortID,
 	})
-}
+	}
+
+	func GetSubscription(c *gin.Context) {
+	shortID := c.Param("shortId")
+	if shortID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Short ID is required"})
+		return
+	}
+
+	client := remnawave.NewClient()
+	sub, err := client.GetSubscriptionByShortID(shortID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, sub)
+	}
