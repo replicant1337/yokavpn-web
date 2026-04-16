@@ -78,7 +78,6 @@
   font-size: 12px;
   font-weight: 600;
   transition: var(--transition-fast);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .authBtn:hover {
