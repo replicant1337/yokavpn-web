@@ -44,6 +44,7 @@ body {
   color: var(--text-main);
   overflow: hidden;
   user-select: none;
+  text-transform: lowercase;
 }
 
 button {
