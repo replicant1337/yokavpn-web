@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import Navbar from '@/shared/ui/Navbar';
 import Hero from '@/shared/ui/Hero';
-import LoginPage from '@/pages/login/ui/LoginPage';
+import LoginPage from '@/pages/login/ui/LoginPage.tsx';
 import DashboardPage from '@/pages/dashboard/ui/DashboardPage';
 import { AuthProvider, useAuth } from '@/features/auth/model/AuthContext';
 

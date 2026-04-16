@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Subscription } from '@/shared/api';
+import type { Subscription } from '@/shared/api.ts';
 
 interface AuthContextType {
   subscription: Subscription | null;

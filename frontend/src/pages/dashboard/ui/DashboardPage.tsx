@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '@/shared/ui/Dashboard.module.css';
 import { useAuth } from '@/features/auth/model/AuthContext';
+import type { Subscription } from '@/shared/api.ts';
 
 const DashboardPage: React.FC = () => {
   const { subscription } = useAuth();

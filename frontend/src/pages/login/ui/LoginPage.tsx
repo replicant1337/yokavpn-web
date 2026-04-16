@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import styles from '@/shared/ui/LoginModal.module.css';
-import { subscriptionApi } from '@/shared/api';
+import { subscriptionApi } from '@/shared/api.ts';
 import { useAuth } from '@/features/auth/model/AuthContext';
 
 const LoginPage: React.FC = () => {
